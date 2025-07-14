@@ -1,0 +1,11 @@
+const USER_ROLES = {
+    USER: "USER",
+    ADMIN: "ADMIN",
+};
+
+const APPOINTMENT_STATUS = {
+    BOOKED: "BOOKED",
+    CANCELLED: "CANCELLED",
+};
+
+module.exports = { USER_ROLES, APPOINTMENT_STATUS };
