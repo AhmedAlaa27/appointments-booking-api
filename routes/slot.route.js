@@ -1,24 +1,14 @@
 const router = require("express").Router();
+const {
+    getAllSlots,
+    createSlot,
+    getSlotById,
+    updateSlot,
+    deleteSlot,
+} = require("../controllers/slot.controller");
 
-router
-    .route("/")
-    .get((req, res) => {
-        res.send("Getting all slots");
-    })
-    .post((req, res) => {
-        res.send("Creating a new slot");
-    });
+router.route("/").get(getAllSlots).post(createSlot);
 
-router
-    .route("/:id")
-    .get((req, res) => {
-        res.send(`Getting slot with ID: ${req.params.id}`);
-    })
-    .patch((req, res) => {
-        res.send(`Updating slot with ID: ${req.params.id}`);
-    })
-    .delete((req, res) => {
-        res.send(`Deleting slot with ID: ${req.params.id}`);
-    });
+router.route("/:id").get(getSlotById).patch(updateSlot).delete(deleteSlot);
 
 module.exports = router;

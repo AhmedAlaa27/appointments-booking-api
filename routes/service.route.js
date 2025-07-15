@@ -1,24 +1,18 @@
 const router = require("express").Router();
+const {
+    getAllServices,
+    createService,
+    getServiceById,
+    updateService,
+    deleteService,
+} = require("../controllers/service.controller");
 
-router
-    .route("/")
-    .get((req, res) => {
-        res.send("Getting all services");
-    })
-    .post((req, res) => {
-        res.send("Creating a new service");
-    });
+router.route("/").get(getAllServices).post(createService);
 
 router
     .route("/:id")
-    .get((req, res) => {
-        res.send(`Getting service with ID: ${req.params.id}`);
-    })
-    .patch((req, res) => {
-        res.send(`Updating service with ID: ${req.params.id}`);
-    })
-    .delete((req, res) => {
-        res.send(`Deleting service with ID: ${req.params.id}`);
-    });
+    .get(getServiceById)
+    .patch(updateService)
+    .delete(deleteService);
 
 module.exports = router;
