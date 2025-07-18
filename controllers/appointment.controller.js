@@ -1,140 +1,127 @@
 const Appointment = require("../models/appointment.model");
 const { logger } = require("../utils/logger");
-const { HTTP_STATUS_CODES } = require("../utils/httpStatus");
-const { successResponse, errorResponse } = require("../utils/responses");
+const { HTTP_STATUS, HTTP_STATUS_CODES } = require("../utils/httpStatus");
+const { successResponse } = require("../utils/responses");
+const AppError = require("../utils/appError");
+const asyncWrapper = require("../middlewares/asyncWrapper");
 
 // Get all appointments
-const getAllAppointments = async (req, res) => {
-    try {
-        logger.info("Getting all appointments");
-        const appointments = await Appointment.find()
-            .populate("user", "name email")
-            .populate("service", "name description")
-            .populate("slot", "startsAt endsAt");
-        return successResponse(
-            res,
-            HTTP_STATUS_CODES.OK,
-            "Appointments retrieved successfully",
-            appointments
-        );
-    } catch (error) {
-        logger.error("Error getting all appointments:", error);
-        return errorResponse(
-            res,
-            HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            "Failed to retrieve appointments",
-            error
-        );
-    }
-};
+const getAllAppointments = asyncWrapper(async (req, res) => {
+    logger.info("Getting all appointments");
+    const appointments = await Appointment.find()
+        .populate("user", "name email")
+        .populate("service", "name description")
+        .populate("slot", "startsAt endsAt");
+    return successResponse(
+        res,
+        HTTP_STATUS_CODES.OK,
+        "Appointments retrieved successfully",
+        appointments
+    );
+});
 
 // Create a new appointment
-const createAppointment = async (req, res) => {
-    try {
-        logger.info("Creating a new appointment");
-        const { slot, user, service, status } = req.body;
-        const newAppointment = new Appointment({ slot, user, service, status });
-        await newAppointment.save();
-        logger.info("Appointment created successfully");
-        return successResponse(
-            res,
-            HTTP_STATUS_CODES.CREATED,
-            "Appointment created successfully",
-            newAppointment
+const createAppointment = asyncWrapper(async (req, res, next) => {
+    logger.info("Creating a new appointment");
+    const { slot, user, service, status } = req.body;
+
+    // Validate required fields
+    if (!slot || !user || !service) {
+        logger.error("Missing required fields for appointment creation");
+        const error = new AppError(
+            "Missing required fields: slot, user, and service are required",
+            HTTP_STATUS_CODES.BAD_REQUEST,
+            HTTP_STATUS.FAIL
         );
-    } catch (error) {
-        logger.error("Error creating a new appointment:", error);
-        return errorResponse(
-            res,
-            HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            "Failed to create appointment",
-            error
-        );
+        return next(error);
     }
-};
+
+    const newAppointment = new Appointment({ slot, user, service, status });
+    await newAppointment.save();
+    logger.info("Appointment created successfully");
+    return successResponse(
+        res,
+        HTTP_STATUS_CODES.CREATED,
+        "Appointment created successfully",
+        newAppointment
+    );
+});
 
 // Get appointment by ID
-const getAppointmentById = async (req, res) => {
-    try {
-        logger.info(`Getting appointment with ID: ${req.params.id}`);
-        const appointment = await Appointment.findById(req.params.id)
-            .populate("user", "name email")
-            .populate("service", "name description")
-            .populate("slot", "startsAt endsAt");
-        return successResponse(
-            res,
-            HTTP_STATUS_CODES.OK,
-            "Appointment retrieved successfully",
-            appointment
+const getAppointmentById = asyncWrapper(async (req, res, next) => {
+    logger.info(`Getting appointment with ID: ${req.params.id}`);
+    const appointment = await Appointment.findById(req.params.id)
+        .populate("user", "name email")
+        .populate("service", "name description")
+        .populate("slot", "startsAt endsAt");
+    if (!appointment) {
+        logger.error(`Appointment with ID: ${req.params.id} not found`);
+        const error = new AppError(
+            "Appointment not found",
+            HTTP_STATUS_CODES.NOT_FOUND,
+            HTTP_STATUS.FAIL
         );
-    } catch (error) {
-        logger.error(
-            `Error getting appointment with ID ${req.params.id}:`,
-            error
-        );
-        return errorResponse(
-            res,
-            HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            "Failed to retrieve appointment",
-            error
-        );
+        return next(error);
     }
-};
+    return successResponse(
+        res,
+        HTTP_STATUS_CODES.OK,
+        "Appointment retrieved successfully",
+        appointment
+    );
+});
 
 // Update appointment by ID
-const updateAppointment = async (req, res) => {
-    try {
-        logger.info(`Updating appointment with ID: ${req.params.id}`);
-        const appointment = await Appointment.updateOne(
-            { _id: req.params.id },
-            { $set: { ...req.body } }
+const updateAppointment = asyncWrapper(async (req, res, next) => {
+    logger.info(`Updating appointment with ID: ${req.params.id}`);
+    const appointment = await Appointment.findByIdAndUpdate(
+        req.params.id,
+        { $set: { ...req.body } },
+        { new: true, runValidators: true }
+    );
+
+    if (!appointment) {
+        logger.error(`Appointment with ID: ${req.params.id} not found`);
+        const error = new AppError(
+            "Appointment not found",
+            HTTP_STATUS_CODES.NOT_FOUND,
+            HTTP_STATUS.FAIL
         );
-        return successResponse(
-            res,
-            HTTP_STATUS_CODES.OK,
-            "Appointment updated successfully",
-            appointment
-        );
-    } catch (error) {
-        logger.error(
-            `Error updating appointment with ID ${req.params.id}:`,
-            error
-        );
-        return errorResponse(
-            res,
-            HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            "Failed to update appointment",
-            error
-        );
+        return next(error);
     }
-};
+
+    logger.info(`Appointment with ID: ${req.params.id} updated successfully`);
+    return successResponse(
+        res,
+        HTTP_STATUS_CODES.OK,
+        "Appointment updated successfully",
+        appointment
+    );
+});
 
 // Delete appointment by ID
-const deleteAppointment = async (req, res) => {
-    try {
-        logger.info(`Deleting appointment with ID: ${req.params.id}`);
-        const appointment = await Appointment.findByIdAndDelete({
-            _id: req.params.id,
-        });
-        return successResponse(
-            res,
-            HTTP_STATUS_CODES.OK,
-            "Appointment deleted successfully",
-            appointment
+const deleteAppointment = asyncWrapper(async (req, res, next) => {
+    logger.info(`Deleting appointment with ID: ${req.params.id}`);
+    const appointment = await Appointment.findByIdAndDelete(req.params.id);
+
+    if (!appointment) {
+        logger.error(`Appointment with ID: ${req.params.id} not found`);
+        const error = new AppError(
+            "Appointment not found",
+            HTTP_STATUS_CODES.NOT_FOUND,
+            HTTP_STATUS.FAIL
         );
-    } catch (error) {
-        logger.error(
-            `Error deleting appointment with ID ${req.params.id}:`,
-            error
-        );
-        return errorResponse(
-            res,
-            HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
-            "Failed to delete appointment",
-            error
-        );
+        return next(error);
     }
-};
+
+    logger.info(`Appointment with ID: ${req.params.id} deleted successfully`);
+    return successResponse(
+        res,
+        HTTP_STATUS_CODES.OK,
+        "Appointment deleted successfully",
+        appointment
+    );
+});
 
 module.exports = {
     getAllAppointments,

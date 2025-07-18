@@ -6,13 +6,21 @@ const {
     updateService,
     deleteService,
 } = require("../controllers/service.controller");
+const validateSchema = require("../middlewares/validateSchema");
+const {
+    serviceCreateSchema,
+    serviceUpdateSchema,
+} = require("../validation/service.validation");
 
-router.route("/").get(getAllServices).post(createService);
+router
+    .route("/")
+    .get(getAllServices)
+    .post(validateSchema(serviceCreateSchema), createService);
 
 router
     .route("/:id")
     .get(getServiceById)
-    .patch(updateService)
+    .patch(validateSchema(serviceUpdateSchema), updateService)
     .delete(deleteService);
 
 module.exports = router;

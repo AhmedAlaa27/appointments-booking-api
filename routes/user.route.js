@@ -4,9 +4,15 @@ const {
     login,
     register,
 } = require("../controllers/user.controller");
+const validateSchema = require("../middlewares/validateSchema");
+const {
+    userRegistrationSchema,
+    userLoginSchema,
+    userUpdateSchema,
+} = require("../validation/user.validation");
 
 router.get("/", getAllUsers);
-router.post("/login", login);
-router.post("/register", register);
+router.post("/login", validateSchema(userLoginSchema), login);
+router.post("/register", validateSchema(userRegistrationSchema), register);
 
 module.exports = router;
