@@ -11,16 +11,29 @@ const {
     appointmentCreateSchema,
     appointmentUpdateSchema,
 } = require("../validation/appointment.validation");
+const verifyToken = require("../middlewares/verifyToken");
+const isAllowed = require("../middlewares/isAllowed");
+const { USER_ROLES } = require("../utils/enums");
 
 router
     .route("/")
     .get(getAllAppointments)
-    .post(validateSchema(appointmentCreateSchema), createAppointment);
+    .post(
+        verifyToken,
+        isAllowed([USER_ROLES.ADMIN, USER_ROLES.USER]),
+        validateSchema(appointmentCreateSchema),
+        createAppointment
+    );
 
 router
     .route("/:id")
     .get(getAppointmentById)
-    .patch(validateSchema(appointmentUpdateSchema), updateAppointment)
-    .delete(deleteAppointment);
+    .patch(
+        verifyToken,
+        isAllowed([USER_ROLES.ADMIN, USER_ROLES.USER]),
+        validateSchema(appointmentUpdateSchema),
+        updateAppointment
+    )
+    .delete(verifyToken, isAllowed([USER_ROLES.ADMIN]), deleteAppointment);
 
 module.exports = router;

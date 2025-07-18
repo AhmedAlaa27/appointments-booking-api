@@ -11,16 +11,29 @@ const {
     serviceCreateSchema,
     serviceUpdateSchema,
 } = require("../validation/service.validation");
+const verifyToken = require("../middlewares/verifyToken");
+const isAllowed = require("../middlewares/isAllowed");
+const { USER_ROLES } = require("../utils/enums");
 
 router
     .route("/")
     .get(getAllServices)
-    .post(validateSchema(serviceCreateSchema), createService);
+    .post(
+        verifyToken,
+        isAllowed([USER_ROLES.ADMIN]),
+        validateSchema(serviceCreateSchema),
+        createService
+    );
 
 router
     .route("/:id")
     .get(getServiceById)
-    .patch(validateSchema(serviceUpdateSchema), updateService)
-    .delete(deleteService);
+    .patch(
+        verifyToken,
+        isAllowed([USER_ROLES.ADMIN]),
+        validateSchema(serviceUpdateSchema),
+        updateService
+    )
+    .delete(verifyToken, isAllowed([USER_ROLES.ADMIN]), deleteService);
 
 module.exports = router;

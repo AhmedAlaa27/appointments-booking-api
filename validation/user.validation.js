@@ -20,8 +20,8 @@ const userRegistrationSchema = [
         .withMessage("Password is required")
         .isString()
         .withMessage("Password must be a string")
-        .isLength({ min: 6, max: 100 })
-        .withMessage("Password must be between 6 and 100 characters"),
+        .isLength({ min: 4, max: 100 })
+        .withMessage("Password must be between 4 and 100 characters"),
     body("role")
         .optional()
         .isIn(["USER", "ADMIN"])

@@ -11,16 +11,29 @@ const {
     slotCreateSchema,
     slotUpdateSchema,
 } = require("../validation/slot.validation");
+const verifyToken = require("../middlewares/verifyToken");
+const isAllowed = require("../middlewares/isAllowed");
+const { USER_ROLES } = require("../utils/enums");
 
 router
     .route("/")
     .get(getAllSlots)
-    .post(validateSchema(slotCreateSchema), createSlot);
+    .post(
+        verifyToken,
+        isAllowed([USER_ROLES.ADMIN]),
+        validateSchema(slotCreateSchema),
+        createSlot
+    );
 
 router
     .route("/:id")
     .get(getSlotById)
-    .patch(validateSchema(slotUpdateSchema), updateSlot)
-    .delete(deleteSlot);
+    .patch(
+        verifyToken,
+        isAllowed([USER_ROLES.ADMIN]),
+        validateSchema(slotUpdateSchema),
+        updateSlot
+    )
+    .delete(verifyToken, isAllowed([USER_ROLES.ADMIN]), deleteSlot);
 
 module.exports = router;
