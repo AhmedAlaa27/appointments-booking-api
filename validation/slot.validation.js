@@ -1,107 +1,71 @@
-const { z } = require("zod");
+const { body } = require("express-validator");
 
-// Slot creation validation schema
-const slotCreateSchema = z
-    .object({
-        body: z.object({
-            service: z
-                .string({
-                    required_error: "Service ID is required",
-                    invalid_type_error: "Service ID must be a string",
-                })
-                .regex(/^[0-9a-fA-F]{24}$/, "Invalid service ID format"),
-
-            startsAt: z
-                .string({
-                    required_error: "Start time is required",
-                    invalid_type_error: "Start time must be a string",
-                })
-                .datetime(
-                    "Invalid start time format. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)"
-                )
-                .refine((date) => new Date(date) > new Date(), {
-                    message: "Start time must be in the future",
-                }),
-
-            endsAt: z
-                .string({
-                    required_error: "End time is required",
-                    invalid_type_error: "End time must be a string",
-                })
-                .datetime(
-                    "Invalid end time format. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)"
-                ),
-
-            isBooked: z
-                .boolean({
-                    invalid_type_error: "isBooked must be a boolean",
-                })
-                .optional(),
-        }),
-    })
-    .refine(
-        (data) => {
-            const startTime = new Date(data.body.startsAt);
-            const endTime = new Date(data.body.endsAt);
-            return endTime > startTime;
-        },
-        {
-            message: "End time must be after start time",
-            path: ["body", "endsAt"],
-        }
-    );
-
-// Slot update validation schema
-const slotUpdateSchema = z
-    .object({
-        body: z.object({
-            service: z
-                .string({
-                    invalid_type_error: "Service ID must be a string",
-                })
-                .regex(/^[0-9a-fA-F]{24}$/, "Invalid service ID format")
-                .optional(),
-
-            startsAt: z
-                .string({
-                    invalid_type_error: "Start time must be a string",
-                })
-                .datetime(
-                    "Invalid start time format. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)"
-                )
-                .optional(),
-
-            endsAt: z
-                .string({
-                    invalid_type_error: "End time must be a string",
-                })
-                .datetime(
-                    "Invalid end time format. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)"
-                )
-                .optional(),
-
-            isBooked: z
-                .boolean({
-                    invalid_type_error: "isBooked must be a boolean",
-                })
-                .optional(),
-        }),
-    })
-    .refine(
-        (data) => {
-            const { startsAt, endsAt } = data.body;
-            if (startsAt && endsAt) {
-                const startTime = new Date(startsAt);
-                const endTime = new Date(endsAt);
-                return endTime > startTime;
+const slotCreateSchema = [
+    body("service")
+        .notEmpty()
+        .withMessage("Service ID is required")
+        .isString()
+        .withMessage("Service ID must be a string")
+        .matches(/^[0-9a-fA-F]{24}$/)
+        .withMessage("Invalid service ID format"),
+    body("startsAt")
+        .notEmpty()
+        .withMessage("Start time is required")
+        .isISO8601()
+        .withMessage("Start time must be a valid ISO 8601 date")
+        .custom((value) => {
+            if (new Date(value) <= new Date()) {
+                throw new Error("Start time must be in the future");
             }
             return true;
-        },
-        {
-            message: "End time must be after start time",
-            path: ["body", "endsAt"],
+        }),
+    body("endsAt")
+        .notEmpty()
+        .withMessage("End time is required")
+        .isISO8601()
+        .withMessage("End time must be a valid ISO 8601 date"),
+    body("endsAt").custom((value, { req }) => {
+        const startsAt = new Date(req.body.startsAt);
+        const endsAt = new Date(value);
+        if (startsAt && endsAt <= startsAt) {
+            throw new Error("End time must be after start time");
         }
-    );
+        return true;
+    }),
+    body("isBooked")
+        .optional()
+        .isBoolean()
+        .withMessage("isBooked must be a boolean"),
+];
+
+const slotUpdateSchema = [
+    body("service")
+        .optional()
+        .isString()
+        .withMessage("Service ID must be a string")
+        .matches(/^[0-9a-fA-F]{24}$/)
+        .withMessage("Invalid service ID format"),
+    body("startsAt")
+        .optional()
+        .isISO8601()
+        .withMessage("Start time must be a valid ISO 8601 date"),
+    body("endsAt")
+        .optional()
+        .isISO8601()
+        .withMessage("End time must be a valid ISO 8601 date"),
+    body("endsAt").custom((value, { req }) => {
+        const startsAt = req.body.startsAt ? new Date(req.body.startsAt) : null;
+        const endsAt = new Date(value);
+        if (startsAt && endsAt <= startsAt) {
+            throw new Error("End time must be after start time");
+        }
+        return true;
+    }),
+    body("isBooked")
+        .optional()
+        .isBoolean()
+        .withMessage("isBooked must be a boolean"),
+];
 
 module.exports = {
     slotCreateSchema,

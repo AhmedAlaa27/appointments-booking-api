@@ -1,64 +1,49 @@
-const { z } = require("zod");
+const { body } = require("express-validator");
 
-// Service creation validation schema
-const serviceCreateSchema = z.object({
-    body: z.object({
-        name: z
-            .string({
-                required_error: "Service name is required",
-                invalid_type_error: "Service name must be a string",
-            })
-            .min(1, "Service name cannot be empty")
-            .max(100, "Service name must not exceed 100 characters"),
+const serviceCreateSchema = [
+    body("name")
+        .notEmpty()
+        .withMessage("Service name is required")
+        .isString()
+        .withMessage("Service name must be a string")
+        .isLength({ min: 5, max: 100 })
+        .withMessage("Service name must be between 5 and 100 characters"),
+    body("description")
+        .notEmpty()
+        .withMessage("Service description is required")
+        .isString()
+        .withMessage("Service description must be a string")
+        .isLength({ min: 1, max: 500 })
+        .withMessage(
+            "Service description must be between 1 and 500 characters"
+        ),
+    body("durationMin")
+        .notEmpty()
+        .withMessage("Service duration is required")
+        .isInt({ min: 5, max: 480 })
+        .withMessage("Duration must be a whole number between 5 and 480"),
+];
 
-        description: z
-            .string({
-                required_error: "Service description is required",
-                invalid_type_error: "Service description must be a string",
-            })
-            .min(1, "Service description cannot be empty")
-            .max(500, "Service description must not exceed 500 characters"),
-
-        durationMin: z
-            .number({
-                required_error: "Duration in minutes is required",
-                invalid_type_error: "Duration must be a number",
-            })
-            .int("Duration must be a whole number")
-            .min(5, "Duration must be at least 5 minutes")
-            .max(480, "Duration must not exceed 480 minutes (8 hours)"),
-    }),
-});
-
-// Service update validation schema
-const serviceUpdateSchema = z.object({
-    body: z.object({
-        name: z
-            .string({
-                invalid_type_error: "Service name must be a string",
-            })
-            .min(1, "Service name cannot be empty")
-            .max(100, "Service name must not exceed 100 characters")
-            .optional(),
-
-        description: z
-            .string({
-                invalid_type_error: "Service description must be a string",
-            })
-            .min(1, "Service description cannot be empty")
-            .max(500, "Service description must not exceed 500 characters")
-            .optional(),
-
-        durationMin: z
-            .number({
-                invalid_type_error: "Duration must be a number",
-            })
-            .int("Duration must be a whole number")
-            .min(5, "Duration must be at least 5 minutes")
-            .max(480, "Duration must not exceed 480 minutes (8 hours)")
-            .optional(),
-    }),
-});
+const serviceUpdateSchema = [
+    body("name")
+        .optional()
+        .isString()
+        .withMessage("Service name must be a string")
+        .isLength({ min: 1, max: 100 })
+        .withMessage("Service name must be between 1 and 100 characters"),
+    body("description")
+        .optional()
+        .isString()
+        .withMessage("Service description must be a string")
+        .isLength({ min: 1, max: 500 })
+        .withMessage(
+            "Service description must be between 1 and 500 characters"
+        ),
+    body("durationMin")
+        .optional()
+        .isInt({ min: 5, max: 480 })
+        .withMessage("Duration must be a whole number between 5 and 480"),
+];
 
 module.exports = {
     serviceCreateSchema,

@@ -1,93 +1,66 @@
-const { z } = require("zod");
+const { body } = require("express-validator");
 
-// User registration validation schema
-const userRegistrationSchema = z.object({
-    body: z.object({
-        username: z
-            .string({
-                required_error: "Username is required",
-                invalid_type_error: "Username must be a string",
-            })
-            .min(3, "Username must be at least 3 characters long")
-            .max(50, "Username must not exceed 50 characters"),
+const userRegistrationSchema = [
+    body("username")
+        .notEmpty()
+        .withMessage("Username is required")
+        .isString()
+        .withMessage("Username must be a string")
+        .isLength({ min: 3, max: 50 })
+        .withMessage("Username must be between 3 and 50 characters"),
+    body("email")
+        .notEmpty()
+        .withMessage("Email is required")
+        .isEmail()
+        .withMessage("Invalid email format")
+        .isLength({ max: 100 })
+        .withMessage("Email must not exceed 100 characters"),
+    body("password")
+        .notEmpty()
+        .withMessage("Password is required")
+        .isString()
+        .withMessage("Password must be a string")
+        .isLength({ min: 6, max: 100 })
+        .withMessage("Password must be between 6 and 100 characters"),
+    body("role")
+        .optional()
+        .isIn(["USER", "ADMIN"])
+        .withMessage("Role must be either USER or ADMIN"),
+];
 
-        email: z
-            .string({
-                required_error: "Email is required",
-                invalid_type_error: "Email must be a string",
-            })
-            .email("Invalid email format")
-            .max(100, "Email must not exceed 100 characters"),
+const userLoginSchema = [
+    body("email").isEmail().withMessage("Invalid email format"),
+    body("password")
+        .isString()
+        .withMessage("Password must be a string")
+        .notEmpty()
+        .withMessage("Password is required"),
+];
 
-        password: z
-            .string({
-                required_error: "Password is required",
-                invalid_type_error: "Password must be a string",
-            })
-            .min(6, "Password must be at least 6 characters long")
-            .max(100, "Password must not exceed 100 characters"),
-
-        role: z
-            .enum(["USER", "ADMIN"], {
-                invalid_type_error: "Role must be either USER or ADMIN",
-            })
-            .optional(),
-    }),
-});
-
-// User login validation schema
-const userLoginSchema = z.object({
-    body: z.object({
-        email: z
-            .string({
-                required_error: "Email is required",
-                invalid_type_error: "Email must be a string",
-            })
-            .email("Invalid email format"),
-
-        password: z
-            .string({
-                required_error: "Password is required",
-                invalid_type_error: "Password must be a string",
-            })
-            .min(1, "Password is required"),
-    }),
-});
-
-// User update validation schema
-const userUpdateSchema = z.object({
-    body: z.object({
-        username: z
-            .string({
-                invalid_type_error: "Username must be a string",
-            })
-            .min(3, "Username must be at least 3 characters long")
-            .max(50, "Username must not exceed 50 characters")
-            .optional(),
-
-        email: z
-            .string({
-                invalid_type_error: "Email must be a string",
-            })
-            .email("Invalid email format")
-            .max(100, "Email must not exceed 100 characters")
-            .optional(),
-
-        password: z
-            .string({
-                invalid_type_error: "Password must be a string",
-            })
-            .min(6, "Password must be at least 6 characters long")
-            .max(100, "Password must not exceed 100 characters")
-            .optional(),
-
-        role: z
-            .enum(["USER", "ADMIN"], {
-                invalid_type_error: "Role must be either USER or ADMIN",
-            })
-            .optional(),
-    }),
-});
+const userUpdateSchema = [
+    body("username")
+        .optional()
+        .isString()
+        .withMessage("Username must be a string")
+        .isLength({ min: 3, max: 50 })
+        .withMessage("Username must be between 3 and 50 characters"),
+    body("email")
+        .optional()
+        .isEmail()
+        .withMessage("Invalid email format")
+        .isLength({ max: 100 })
+        .withMessage("Email must not exceed 100 characters"),
+    body("password")
+        .optional()
+        .isString()
+        .withMessage("Password must be a string")
+        .isLength({ min: 6, max: 100 })
+        .withMessage("Password must be between 6 and 100 characters"),
+    body("role")
+        .optional()
+        .isIn(["USER", "ADMIN"])
+        .withMessage("Role must be either USER or ADMIN"),
+];
 
 module.exports = {
     userRegistrationSchema,
