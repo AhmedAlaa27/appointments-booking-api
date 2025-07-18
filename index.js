@@ -11,6 +11,7 @@ const serviceRouter = require("./routes/service.route");
 const slotRouter = require("./routes/slot.route");
 const appointmentRouter = require("./routes/appointment.route");
 const { errorResponse, failResponse } = require("./utils/responses");
+const { HTTP_STATUS_CODES } = require("./utils/httpStatus");
 
 // Initialize express app
 const app = express();
@@ -50,6 +51,15 @@ app.use((error, req, res, next) => {
             error.message || "Bad Request"
         );
     }
+});
+
+// 404 Not Found handler
+app.use((req, res, next) => {
+    errorResponse(
+        res,
+        HTTP_STATUS_CODES.NOT_FOUND,
+        "The requested route was not found"
+    );
 });
 
 // Start the server
